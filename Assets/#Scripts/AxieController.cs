@@ -3,16 +3,19 @@ using System.Collections.Generic;
 using AxieMixer.Unity;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Random = UnityEngine.Random;
 
 namespace _Scripts {
-    public class CharacterController : MonoBehaviour {
-        [SerializeField] private float movementSpeed = 1f;
+    public class AxieController : MonoBehaviour {
         [SerializeField] private AxieStateManager axieStateManager;
+        public bool isDefender;
+        public int maxHitPoint;
+        public int currentHitPoint;
         public Tilemap map;
         public Vector3 positionOffset;
+        private int RandomNumber => Random.Range(0, 3);
         private Camera _camera;
         private bool _isClosestEnemyFound;
-        public bool isDefender;
         private bool _isSelected;
         private bool _isEnemyOnTheLeft;
         private bool _isMoving;
@@ -20,19 +23,34 @@ namespace _Scripts {
         private GameObject _closestEnemy;
         private Queue<Vector3Int> _pathToEnemy = new Queue<Vector3Int>();
         private Spawner _spawner;
+        private string _eventDealDamage;
+        private string _instanceId;
         private void Awake() {
             Mixer.Init();
             _camera = Camera.main;
             _spawner = GameObject.FindWithTag("Spawner").GetComponent<Spawner>();
-            
+            maxHitPoint = isDefender ? 32 : 16;
+            currentHitPoint = maxHitPoint;
+            _instanceId = gameObject.GetInstanceID().ToString();
+            _eventDealDamage = $"DealDamage{_instanceId}";
+            EventManager.StartListening(_eventDealDamage, DealDamage);
         }
-
+        
         // Start is called before the first frame update
         private void Start() {
             _enemyList = isDefender ? _spawner.attackers : _spawner.defenders;
             StartCoroutine(CheckForAction());
         }
 
+        private void DealDamage(int damage) {
+            currentHitPoint -= damage;
+            var eventUpdateHealthBar = $"UpdateHealthBar{_instanceId}";
+            EventManager.TriggerEvent(eventUpdateHealthBar, currentHitPoint);
+            if (currentHitPoint >= 0) return;
+            currentHitPoint = 0;
+            EventManager.StopListening(_eventDealDamage, DealDamage);
+            DestroyImmediate(gameObject);
+        }
         // Update is called once per frame
         private void Update()
         {
@@ -65,11 +83,7 @@ namespace _Scripts {
             var axieAtTarget = GetAxieAt(targetPosition);
             if (axieAtTarget is not null && axieAtTarget.CompareTag("Attacker")) {
                 // Change target
-                _enemyList.Remove(_closestEnemy);
-                _closestEnemy = null;
-                _pathToEnemy.Clear();
-                _isClosestEnemyFound = false;
-                axieStateManager.SwitchState(axieStateManager.IdleState);
+                ChangeTarget();
             }
             else {
                 // keep moving there
@@ -79,12 +93,19 @@ namespace _Scripts {
                 else {
                     axieStateManager.FlipAxie(-1f);
                 }
-                axieStateManager.SwitchState(axieStateManager.WalkingState);
+                axieStateManager.SwitchState(axieStateManager.walkingState);
                 Debug.Log($"{tag} moved to {targetPosition}");
                 transform.position = map.CellToWorld(targetPosition) - positionOffset;
             }
         }
 
+        private void ChangeTarget() {
+            axieStateManager.SwitchState(axieStateManager.idleState);
+            _enemyList.Remove(_closestEnemy);
+            _closestEnemy = null;
+            _pathToEnemy.Clear();
+            _isClosestEnemyFound = false;
+        }
         private bool isTargetOnTheLeft(Vector3Int destination) {
             var currentPosition = map.WorldToCell(transform.position);
             var direction = destination - currentPosition;
@@ -104,6 +125,7 @@ namespace _Scripts {
                     return true;
                 }
             }
+            axieStateManager.SwitchState(axieStateManager.idleState);
             return false;
         }
         
@@ -160,14 +182,38 @@ namespace _Scripts {
         }
         
         private void Attack(GameObject enemy) {
-            axieStateManager.SwitchState(axieStateManager.AttackingState);
+            var eventDealDamageEnemy = $"DealDamage{enemy.GetInstanceID()}";
+            var enemyController = enemy.GetComponent<AxieController>();
+            var targetNumber = enemyController.RandomNumber;
+            axieStateManager.SwitchState(axieStateManager.attackingState);
             var enemyPosition = map.WorldToCell(enemy.transform.position);
             if (isTargetOnTheLeft(enemyPosition)) 
                 axieStateManager.FlipAxie(1f);
             else axieStateManager.FlipAxie(-1f);
-                Debug.LogWarning($"Attack {enemy.tag}");
+            var damage = GetDamage(RandomNumber, targetNumber);
+            EventManager.TriggerEvent(eventDealDamageEnemy, damage);
+            if (enemy == null) {
+                if (!isDefender)
+                    ChangeTarget();
+                else {
+                    axieStateManager.SwitchState(axieStateManager.idleState);
+                }
+            }
         }
-        
+
+        private int GetDamage(int attackerNumber, int targetNumber) {
+            var calculation = (3 + attackerNumber - targetNumber) % 3;
+            switch (calculation) {
+                case 0:
+                    return 4;
+                case 1:
+                    return 5;
+                case 2:
+                    return 3;
+                default:
+                    return 0;
+            }
+        }
         private GameObject GetAxieAt(Vector3Int position) {
             var worldPosition = map.GetCellCenterWorld(position);
             var screenPoint = _camera.WorldToScreenPoint(worldPosition);
