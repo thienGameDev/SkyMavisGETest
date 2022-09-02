@@ -7,17 +7,16 @@ namespace _Scripts {
         [SerializeField] private float scale = .5f;
         public SkeletonAnimation skeletonAnimation;
         public bool isDefender;
-        public AxieBaseState currentState;
-        public AxieBaseState IdleState = new AxieIdleState();
-        public AxieBaseState WalkingState = new AxieWalkingState();
-        public AxieBaseState AttackingState = new AxieAttackingState();
-        public AxieBaseState DeadState = new AxieDeadState();
+        private AxieBaseState _currentState;
+        public AxieBaseState idleState = new AxieIdleState();
+        public AxieBaseState walkingState = new AxieWalkingState();
+        public AxieBaseState attackingState = new AxieAttackingState();
         public string animationName;
         private void Start() {
             SetGenes();
             RandomFlipAxie();
-            currentState = IdleState;
-            currentState.EnterState(this);
+            _currentState = idleState;
+            _currentState.EnterState(this);
         }
 
         public void SetGenes() {
@@ -39,12 +38,12 @@ namespace _Scripts {
         }
         
         private void FixedUpdate() {
-            currentState.UpdateState(this);
+            _currentState.UpdateState(this);
         }
 
         public void SwitchState(AxieBaseState newState) {
-            currentState = newState;
-            currentState.EnterState(this);
+            _currentState = newState;
+            _currentState.EnterState(this);
         }
     }
 }

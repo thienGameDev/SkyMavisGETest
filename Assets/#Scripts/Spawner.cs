@@ -40,7 +40,7 @@ namespace _Scripts {
             for (int i = 0; i < axieCount; i++) {
                 var position = RandomizePosition();
                 var axie = Instantiate(axiePrefab, parent);
-                var characterController = axie.GetComponent<CharacterController>();
+                var characterController = axie.GetComponent<AxieController>();
                 characterController.map = map;
                 var positionOffset = characterController.positionOffset;
                 axie.transform.position = map.CellToWorld(position) - positionOffset;
