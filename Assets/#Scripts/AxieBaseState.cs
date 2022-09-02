@@ -1,0 +1,6 @@
+﻿namespace _Scripts {
+    public abstract class AxieBaseState {
+        public abstract void EnterState(AxieStateManager axie);
+        public abstract void UpdateState(AxieStateManager axie);
+    }
+}
