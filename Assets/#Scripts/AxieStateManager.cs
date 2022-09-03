@@ -11,7 +11,7 @@ namespace _Scripts {
         public AxieBaseState idleState = new AxieIdleState();
         public AxieBaseState walkingState = new AxieWalkingState();
         public AxieBaseState attackingState = new AxieAttackingState();
-        public string animationName;
+        public AxieBaseState victoryState = new AxieVictoryState();
         private void Start() {
             SetGenes();
             RandomFlipAxie();
@@ -19,13 +19,17 @@ namespace _Scripts {
             _currentState.EnterState(this);
         }
 
-        public void SetGenes() {
+        private void SetGenes() {
             var axieId = PlayerPrefs.GetString(isDefender ? "defenderId" : "attackerId");
             var genes = PlayerPrefs.GetString(isDefender ? "defenderGenes" : "attackerGenes");
             skeletonAnimation = GetComponent<SkeletonAnimation>();
             Mixer.SpawnSkeletonAnimation(skeletonAnimation, axieId, genes);
             GetComponent<MeshRenderer>().sortingLayerName = "Player";
             skeletonAnimation.transform.localScale = scale * Vector3.one;
+        }
+
+        public void SetAnimation(string animationName) {
+            skeletonAnimation.state.SetAnimation(0, animationName, true);
         }
 
         private void RandomFlipAxie() {
@@ -37,10 +41,6 @@ namespace _Scripts {
             skeletonAnimation.skeleton.ScaleX = direction;
         }
         
-        private void FixedUpdate() {
-            _currentState.UpdateState(this);
-        }
-
         public void SwitchState(AxieBaseState newState) {
             _currentState = newState;
             _currentState.EnterState(this);
