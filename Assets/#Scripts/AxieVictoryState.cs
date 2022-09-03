@@ -1,7 +1,7 @@
 ﻿namespace _Scripts {
-    public class AxieIdleState: AxieBaseState {
+    public class AxieVictoryState: AxieBaseState{
         public override void EnterState(AxieStateManager axie) {
-            var animationName = "action/idle/normal";
+            var animationName = "activity/victory-pose-back-flip";
             axie.SetAnimation(animationName);
         }
     }
