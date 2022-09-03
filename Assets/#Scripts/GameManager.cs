@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using AxieMixer.Unity;
 using Newtonsoft.Json.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
@@ -9,26 +11,41 @@ namespace _Scripts
 {
     public class GameManager : MonoBehaviour
     {
+        [SerializeField] private GameObject preGameUI;
         [SerializeField] private Button startBtn;
+        [SerializeField] private TMP_InputField attackerCountInput;
+        [SerializeField] private TMP_InputField defenderCountInput;
+        [SerializeField] private GameObject inGameUI;
+        [SerializeField] private Button pauseBtn;
+        [SerializeField] private Button increaseSpeedBtn;
+        [SerializeField] private Button decreaseSpeedBtn;
+        
         [SerializeField] private string attackerAxieId = "4191804";
         [SerializeField] private string defenderAxieId = "2724598";
+        
         private bool _isPlaying;
         private float _currentTimeScale;
-
+        private const float MAX_INCREASE = 16f;
+        private const float MIN_DECREASE = 0.5f;
         private void OnEnable() {
             startBtn.onClick.AddListener(OnStart);
+            pauseBtn.onClick.AddListener(OnPauseOrResume);
+            increaseSpeedBtn.onClick.AddListener(OnIncreasingSpeed);
+            decreaseSpeedBtn.onClick.AddListener(OnDecreasingSpeed);
         }
 
         private void OnDisable() {
             startBtn.onClick.RemoveListener(OnStart);
+            pauseBtn.onClick.RemoveListener(OnPauseOrResume);
+            increaseSpeedBtn.onClick.RemoveListener(OnIncreasingSpeed);
+            decreaseSpeedBtn.onClick.RemoveListener(OnDecreasingSpeed);
         }
-
+        
         private void Awake() {
             Mixer.Init();
             PlayerPrefs.SetString("attackerId", attackerAxieId);
             PlayerPrefs.SetString("defenderId", defenderAxieId);
             LoadingAxieGenes();
-            Spawner.Instance.SpawnAxies();
             _currentTimeScale = 0f;
         }
 
@@ -36,35 +53,52 @@ namespace _Scripts
         private void Start()
         {
             Time.timeScale = _currentTimeScale;
-            
-            // Debug.Log(PlayerPrefs.GetString("defenderGenes"));
-        }
-
-        // Update is called once per frame
-        private void Update()
-        {
-            
+            var attackerCount = PlayerPrefs.GetString("attackerCount", "20");
+            var defenderCount = PlayerPrefs.GetString("defenderCount", "10");
+            attackerCountInput.text = attackerCount;
+            defenderCountInput.text = defenderCount;
         }
         
-
         private void OnStart() {
+            EventManager.StartListening("EndGame", EndGame);
+            var attackerCount = attackerCountInput.text;
+            var defenderCount = defenderCountInput.text;
+            PlayerPrefs.SetString("attackerCount", attackerCount);
+            PlayerPrefs.SetString("defenderCount", defenderCount);
+            Spawner.Instance.SpawnAxies(Convert.ToInt32(attackerCount), Convert.ToInt32(defenderCount));
             _currentTimeScale = 1f;
             Time.timeScale = _currentTimeScale;
-            startBtn.gameObject.SetActive(false);
-        }
-        
-        public void OnResume() {
-            Time.timeScale = _currentTimeScale;
+            preGameUI.gameObject.SetActive(false);
+            inGameUI.SetActive(true);
             _isPlaying = true;
         }
 
-        public void OnPause() {
-            Time.timeScale = 0f;
-            _isPlaying = false;
+        private void OnPauseOrResume() {
+            Time.timeScale = _isPlaying ? 0f : _currentTimeScale;
+            pauseBtn.GetComponentInChildren<Text>().text = _isPlaying ? "Resume" : "Pause";
+            increaseSpeedBtn.enabled = decreaseSpeedBtn.enabled = !_isPlaying;
+            _isPlaying = !_isPlaying;
         }
 
-        public void OnIncreasingSpeed() {
-            Time.timeScale = _currentTimeScale * 3f;
+        private void OnIncreasingSpeed() {
+            _currentTimeScale *= 2f;
+            if (_currentTimeScale > MAX_INCREASE) _currentTimeScale = MAX_INCREASE;
+            Time.timeScale = _currentTimeScale;
+        }
+
+        private void OnDecreasingSpeed() {
+            _currentTimeScale /= 2f;
+            if (_currentTimeScale < MIN_DECREASE) _currentTimeScale = MIN_DECREASE;
+            Time.timeScale = _currentTimeScale;
+        }
+        
+        private void EndGame(int param) {
+            _currentTimeScale = 1f;
+            Time.timeScale = _currentTimeScale;
+            EventManager.StopListening("EndGame", EndGame);
+            inGameUI.SetActive(false);
+            startBtn.GetComponentInChildren<Text>().text = "Restart";
+            preGameUI.gameObject.SetActive(true);
         }
         
         private void LoadingAxieGenes() {
