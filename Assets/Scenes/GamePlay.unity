@@ -134,7 +134,7 @@ GameObject:
   - component: {fileID: 59148441}
   - component: {fileID: 59148442}
   m_Layer: 0
-  m_Name: Spawner
+  m_Name: Spawner------------------
   m_TagString: Spawner
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -173,12 +173,10 @@ MonoBehaviour:
   defenderParent: {fileID: 689725561}
   defenderCount: 10
   attackerParent: {fileID: 1008941249}
-  attackerCount: 10
+  attackerCount: 20
   defenderPrefab: {fileID: 4073596383560696243, guid: b5b7ff32918aab74a901a6293be34d79,
     type: 3}
   attackerPrefab: {fileID: 9076113206462427288, guid: f1c560d5fb893bc47b3398c470040b06,
-    type: 3}
-  debugPoint: {fileID: 6080476886680243360, guid: 34afd2bc55d4d3142939a430a02bdc8f,
     type: 3}
   defenders: []
   attackers: []
@@ -25610,5 +25608,5 @@ Canvas:
   m_SortingBucketNormalizedSize: 0
   m_AdditionalShaderChannelsFlag: 0
   m_SortingLayerID: -1664353497
-  m_SortingOrder: 0
+  m_SortingOrder: 99
   m_TargetDisplay: 0
