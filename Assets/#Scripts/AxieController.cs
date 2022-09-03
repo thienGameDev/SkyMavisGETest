@@ -1,8 +1,6 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using AxieMixer.Unity;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Random = UnityEngine.Random;
@@ -21,7 +19,13 @@ namespace _Scripts {
                 return _randomNumber;
             }
         }
+        //UI stats panel
+        private StatsPanel _axieStatsPanel;
+        
         private int _randomNumber = -1;
+        public int damage;
+        private const float TIME_FOR_CHECKING = 1f;
+        private float _timeRemaining;
         private Camera _camera;
         private bool _isFindingTarget;
         //Debug
@@ -33,7 +37,6 @@ namespace _Scripts {
         private Spawner _spawner;
         private string _eventDealDamage;
         private string _instanceId;
-        private Coroutine _checkActionRoutine;
         private bool _battleEnded;
 
         private void Awake() {
@@ -45,12 +48,16 @@ namespace _Scripts {
             _instanceId = gameObject.GetInstanceID().ToString();
             _eventDealDamage = $"DealDamage{_instanceId}";
             EventManager.StartListening(_eventDealDamage, DealDamage);
+            SetupStatsPanel();
         }
-        
+
+        private void SetupStatsPanel() {
+            var canvas = GameObject.FindGameObjectWithTag("UICanvas");
+            _axieStatsPanel = canvas.transform.Find("AxieStats").gameObject.GetComponent<StatsPanel>();
+        }
         // Start is called before the first frame update
         private void Start() {
             _enemyList = isAttacker ? _spawner.defenders : _spawner.attackers;
-            _checkActionRoutine = StartCoroutine(CheckForAction());
         }
 
         private void DealDamage(int damage) {
@@ -68,29 +75,29 @@ namespace _Scripts {
         }
 
         private void Update() {
+            if (_timeRemaining > 0) {
+                _timeRemaining -= Time.deltaTime;
+            }
+            else {
+                CheckForAction();
+                _timeRemaining = TIME_FOR_CHECKING;
+            }
             if (_battleEnded) return;
             if (_spawner.attackers.Count == 0 || _spawner.defenders.Count == 0) {
-                StopCoroutine(_checkActionRoutine);
                 axieStateManager.SwitchState(axieStateManager.victoryState);
                 _battleEnded = true;
             }
         }
-
-        private IEnumerator CheckForAction() {
-            while (true) {
-                yield return new WaitForSeconds(1f);
-                // Debug.Log("Check action");
-                var adjacentEnemy = GetAdjacentEnemy();
-                if (adjacentEnemy is not null) Attack(adjacentEnemy);
-                else {
-                    if (isAttacker && _enemyList.Count > 0) {
-                        MoveToClosestEnemy();
-                    } 
-                    else axieStateManager.SwitchState(axieStateManager.idleState);
-                }
+        
+        private void CheckForAction() {
+            var adjacentEnemy = GetAdjacentEnemy();
+            if (adjacentEnemy is not null) Attack(adjacentEnemy);
+            else {
+                if (isAttacker && _enemyList.Count > 0) {
+                    MoveToClosestEnemy();
+                } 
             }
         }
-
         private void MoveToClosestEnemy() {
             // Find closest enemy
             if (_pathToEnemy.Count == 0) {
@@ -124,7 +131,7 @@ namespace _Scripts {
                 }
             }
         }
-
+        
         private void ChangeTarget() {
             _ignoreEnemyList.Add(_currentEnemy);
             axieStateManager.SwitchState(axieStateManager.idleState);
@@ -208,14 +215,14 @@ namespace _Scripts {
         
         private void Attack(GameObject enemy) {
             var eventDealDamageEnemy = $"DealDamage{enemy.GetInstanceID()}";
-            var enemyController = enemy.GetComponent<AxieController>();
+            var enemyController = enemy.GetComponentInChildren<AxieController>();
             var targetNumber = enemyController.RandomNumber;
             axieStateManager.SwitchState(axieStateManager.attackingState);
             var enemyPosition = map.WorldToCell(enemy.transform.position);
             if (isTargetOnTheLeft(enemyPosition)) 
                 axieStateManager.FlipAxie(1f);
             else axieStateManager.FlipAxie(-1f);
-            var damage = GetDamage(RandomNumber, targetNumber);
+            damage = GetDamage(RandomNumber, targetNumber);
             _randomNumber = -1;
             EventManager.TriggerEvent(eventDealDamageEnemy, damage);
             if (_enemyList.Contains(enemy)) return;
@@ -245,6 +252,12 @@ namespace _Scripts {
                 }
             }
             return null;
+        }
+
+        private void OnMouseDown() {
+            _axieStatsPanel.followObject = this;
+            _axieStatsPanel.gameObject.SetActive(true);
+
         }
     }
 }

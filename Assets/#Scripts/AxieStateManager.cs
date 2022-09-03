@@ -1,17 +1,23 @@
-﻿using AxieMixer.Unity;
+﻿using System;
+using AxieMixer.Unity;
 using Spine.Unity;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace _Scripts {
     public class AxieStateManager : MonoBehaviour {
         [SerializeField] private float scale = .5f;
         public SkeletonAnimation skeletonAnimation;
-        public bool isDefender;
         private AxieBaseState _currentState;
         public AxieBaseState idleState = new AxieIdleState();
         public AxieBaseState walkingState = new AxieWalkingState();
         public AxieBaseState attackingState = new AxieAttackingState();
         public AxieBaseState victoryState = new AxieVictoryState();
+        private bool _isAttacker;
+        private void Awake() {
+            _isAttacker = GetComponent<AxieController>().isAttacker;
+        }
+
         private void Start() {
             SetGenes();
             RandomFlipAxie();
@@ -20,11 +26,13 @@ namespace _Scripts {
         }
 
         private void SetGenes() {
-            var axieId = PlayerPrefs.GetString(isDefender ? "defenderId" : "attackerId");
-            var genes = PlayerPrefs.GetString(isDefender ? "defenderGenes" : "attackerGenes");
-            skeletonAnimation = GetComponent<SkeletonAnimation>();
+            var axieId = PlayerPrefs.GetString(_isAttacker ? "attackerId" : "defenderId");
+            var genes = PlayerPrefs.GetString(_isAttacker ? "attackerGenes" :"defenderGenes");
+            skeletonAnimation = GetComponentInChildren<SkeletonAnimation>();
             Mixer.SpawnSkeletonAnimation(skeletonAnimation, axieId, genes);
-            GetComponent<MeshRenderer>().sortingLayerName = "Player";
+            var meshRender = GetComponentInChildren<MeshRenderer>();
+            meshRender.sortingLayerName = "Player";
+            meshRender.sortingOrder = 1;
             skeletonAnimation.transform.localScale = scale * Vector3.one;
         }
 
