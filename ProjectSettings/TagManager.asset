@@ -11,6 +11,8 @@ TagManager:
   - Spawner
   - UICanvas
   - AxieStats
+  - InGameUI
+  - PreGameUI
   layers:
   - Default
   - TransparentFX

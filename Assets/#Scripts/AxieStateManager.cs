@@ -1,5 +1,4 @@
-﻿using System;
-using AxieMixer.Unity;
+﻿using AxieMixer.Unity;
 using Spine.Unity;
 using UnityEngine;
 using Random = UnityEngine.Random;
