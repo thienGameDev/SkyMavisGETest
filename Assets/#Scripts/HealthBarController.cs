@@ -12,7 +12,7 @@ namespace _Scripts {
         void Start() {
             _localScale = orangeHealthBar.transform.localScale;
             var parent = transform.parent.gameObject;
-            _maxHitPoint = parent.GetComponent<AxieController>().maxHitPoint;
+            _maxHitPoint = parent.GetComponentInChildren<AxieController>().maxHitPoint;
             var parentId = parent.GetInstanceID();
             var eventUpdateHealthBar = $"UpdateHealthBar{parentId}";
             EventManager.StartListening(eventUpdateHealthBar, UpdateHealthBar);
