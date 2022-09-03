@@ -9,6 +9,8 @@ TagManager:
   - AttackerCollider
   - DefenderCollider
   - Spawner
+  - UICanvas
+  - AxieStats
   layers:
   - Default
   - TransparentFX
