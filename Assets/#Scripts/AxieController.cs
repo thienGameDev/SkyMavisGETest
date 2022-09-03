@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using AxieMixer.Unity;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -8,28 +10,37 @@ using Random = UnityEngine.Random;
 namespace _Scripts {
     public class AxieController : MonoBehaviour {
         [SerializeField] private AxieStateManager axieStateManager;
-        public bool isDefender;
+        public bool isAttacker;
         public int maxHitPoint;
         public int currentHitPoint;
         public Tilemap map;
         public Vector3 positionOffset;
-        private int RandomNumber => Random.Range(0, 3);
+        public int RandomNumber {
+            get {
+                if (_randomNumber == -1) _randomNumber = Random.Range(0, 3);
+                return _randomNumber;
+            }
+        }
+        private int _randomNumber = -1;
         private Camera _camera;
-        private bool _isClosestEnemyFound;
-        private bool _isSelected;
-        private bool _isEnemyOnTheLeft;
-        private bool _isMoving;
-        private List<GameObject> _enemyList;
-        private GameObject _closestEnemy;
+        private bool _isFindingTarget;
+        //Debug
+        public List<GameObject> _enemyList;
+        public List<GameObject> _ignoreEnemyList = new List<GameObject>();
+        public GameObject _currentEnemy;
+        
         private Queue<Vector3Int> _pathToEnemy = new Queue<Vector3Int>();
         private Spawner _spawner;
         private string _eventDealDamage;
         private string _instanceId;
+        private Coroutine _checkActionRoutine;
+        private bool _battleEnded;
+
         private void Awake() {
             Mixer.Init();
             _camera = Camera.main;
             _spawner = GameObject.FindWithTag("Spawner").GetComponent<Spawner>();
-            maxHitPoint = isDefender ? 32 : 16;
+            maxHitPoint = isAttacker ? 16 : 32;
             currentHitPoint = maxHitPoint;
             _instanceId = gameObject.GetInstanceID().ToString();
             _eventDealDamage = $"DealDamage{_instanceId}";
@@ -38,113 +49,128 @@ namespace _Scripts {
         
         // Start is called before the first frame update
         private void Start() {
-            _enemyList = isDefender ? _spawner.attackers : _spawner.defenders;
-            StartCoroutine(CheckForAction());
+            _enemyList = isAttacker ? _spawner.defenders : _spawner.attackers;
+            _checkActionRoutine = StartCoroutine(CheckForAction());
         }
 
         private void DealDamage(int damage) {
             currentHitPoint -= damage;
             var eventUpdateHealthBar = $"UpdateHealthBar{_instanceId}";
             EventManager.TriggerEvent(eventUpdateHealthBar, currentHitPoint);
-            if (currentHitPoint >= 0) return;
-            currentHitPoint = 0;
-            EventManager.StopListening(_eventDealDamage, DealDamage);
-            DestroyImmediate(gameObject);
-        }
-        // Update is called once per frame
-        private void Update()
-        {
-            // if (Input.GetMouseButtonDown(0)) {
-            //     MouseClick();
-            // }
+            if (currentHitPoint < 0) {
+                currentHitPoint = 0;
+                EventManager.StopListening(_eventDealDamage, DealDamage);
+                if (isAttacker) _spawner.attackers.Remove(gameObject);
+                else _spawner.defenders.Remove(gameObject);
+                DestroyImmediate(gameObject);
+            }
             
         }
-        
+
+        private void Update() {
+            if (_battleEnded) return;
+            if (_spawner.attackers.Count == 0 || _spawner.defenders.Count == 0) {
+                StopCoroutine(_checkActionRoutine);
+                axieStateManager.SwitchState(axieStateManager.victoryState);
+                _battleEnded = true;
+            }
+        }
+
         private IEnumerator CheckForAction() {
             while (true) {
                 yield return new WaitForSeconds(1f);
                 // Debug.Log("Check action");
-                if (IsAdjacentEnemy(out GameObject enemy)) Attack(enemy);
+                var adjacentEnemy = GetAdjacentEnemy();
+                if (adjacentEnemy is not null) Attack(adjacentEnemy);
                 else {
-                    if (!isDefender) {
-                        if (!_isClosestEnemyFound) {
-                            FindClosestEnemy();
-                            FindPathToClosestEnemy();
-                        }
-                        else MoveToClosestEnemy();
-                    }
+                    if (isAttacker && _enemyList.Count > 0) {
+                        MoveToClosestEnemy();
+                    } 
+                    else axieStateManager.SwitchState(axieStateManager.idleState);
                 }
             }
         }
 
         private void MoveToClosestEnemy() {
-            if (!_closestEnemy || _pathToEnemy.Count == 0) return;
-            var targetPosition = _pathToEnemy.Dequeue();
-            var axieAtTarget = GetAxieAt(targetPosition);
-            if (axieAtTarget is not null && axieAtTarget.CompareTag("Attacker")) {
-                // Change target
-                ChangeTarget();
+            // Find closest enemy
+            if (_pathToEnemy.Count == 0) {
+                if(_isFindingTarget) return;
+                _isFindingTarget = true;
+                _currentEnemy = FindClosestEnemy();
+                if (_currentEnemy is null) return;
+                FindPathToClosestEnemy(_currentEnemy);
+                _isFindingTarget = false;
             }
             else {
-                // keep moving there
-                if (isTargetOnTheLeft(targetPosition)) {
-                    axieStateManager.FlipAxie(1f);
+                // Start moving to the next path
+                var nextCell = _pathToEnemy.Dequeue();
+                var axieAtNextCell = GetAxieAt(nextCell);
+                if (axieAtNextCell is not null 
+                    && (axieAtNextCell.CompareTag("Attacker") 
+                        || axieAtNextCell.CompareTag("Defender"))) {
+                            axieStateManager.SwitchState(axieStateManager.idleState);
                 }
                 else {
-                    axieStateManager.FlipAxie(-1f);
+                    // keep moving there
+                    axieStateManager.SwitchState(axieStateManager.walkingState);
+                    if (isTargetOnTheLeft(nextCell)) {
+                        axieStateManager.FlipAxie(1f);
+                    }
+                    else {
+                        axieStateManager.FlipAxie(-1f);
+                    }
+                    // Debug.Log($"{tag} moved to {targetPosition}");
+                    transform.position = map.CellToWorld(nextCell) - positionOffset;
                 }
-                axieStateManager.SwitchState(axieStateManager.walkingState);
-                Debug.Log($"{tag} moved to {targetPosition}");
-                transform.position = map.CellToWorld(targetPosition) - positionOffset;
             }
         }
 
         private void ChangeTarget() {
+            _ignoreEnemyList.Add(_currentEnemy);
             axieStateManager.SwitchState(axieStateManager.idleState);
-            _enemyList.Remove(_closestEnemy);
-            _closestEnemy = null;
-            _pathToEnemy.Clear();
-            _isClosestEnemyFound = false;
+            Debug.LogWarning($"{name} has changed target");
         }
         private bool isTargetOnTheLeft(Vector3Int destination) {
             var currentPosition = map.WorldToCell(transform.position);
             var direction = destination - currentPosition;
             // Debug.Log($"Direction: {direction}");
-            if (direction.x < 0 || direction.y > 0) return true;
-            return false;
+            return direction.x < 0 || direction.y > 0;
         }
         
-        private bool IsAdjacentEnemy(out GameObject enemy) {
-            enemy = null;
+        private GameObject GetAdjacentEnemy() {
             var currentCell = map.WorldToCell(transform.position);
             var adjacentCells = GetAdjacentCells(currentCell);
             foreach (var cell in adjacentCells) {
                 var axie = GetAxieAt(cell);
-                if (axie is not null && !axie.CompareTag(tag)) {
-                    enemy = axie;
-                    return true;
-                }
+                if (axie is null || axie.CompareTag(tag)) continue;
+                return axie;
             }
-            axieStateManager.SwitchState(axieStateManager.idleState);
-            return false;
+            // Debug.LogWarning("No adjacent enemy");
+            return null;
         }
         
-        private void FindClosestEnemy() {
-            var thisPosition = transform.position;
+        private GameObject FindClosestEnemy() {
+            if (_enemyList.Count == 0) {
+                return null;
+            }
+            GameObject closestEnemy = null;
+            var thisPosition = map.WorldToCell(transform.position);
             float closestDistance = float.MaxValue;
             foreach (var enemy in _enemyList) {
-                var enemyPosition = enemy.transform.position;
-                var currentDistance = Vector2.Distance(thisPosition, enemyPosition);
+                if (enemy is null || _ignoreEnemyList.Contains(enemy)) continue;
+                var enemyPosition = map.WorldToCell(enemy.transform.position);
+                var currentDistance = Vector3Int.Distance(thisPosition, enemyPosition);
                 if (currentDistance <= closestDistance) {
                     closestDistance = currentDistance;
-                    _closestEnemy = enemy;
-                    _isClosestEnemyFound = true;
+                    closestEnemy = enemy;
                 }
             }
+            return closestEnemy;
         }
         
-        private void FindPathToClosestEnemy() {
-            var enemyPosition = map.WorldToCell(_closestEnemy.transform.position);
+        private void FindPathToClosestEnemy(GameObject closestEnemy) {
+            _pathToEnemy.Clear();
+            var enemyPosition = map.WorldToCell(closestEnemy.transform.position);
             var adjacentCells = GetAdjacentCells(enemyPosition);
             Vector3Int targetPosition = isTargetOnTheLeft(enemyPosition) ? adjacentCells[0] : adjacentCells[1];
             var currentPosition = map.WorldToCell(transform.position);
@@ -170,13 +196,12 @@ namespace _Scripts {
                 currentPosition = tempPath;
                 _pathToEnemy.Enqueue(currentPosition);
             }
-            
         }
 
         private List<Vector3Int> GetAdjacentCells(Vector3Int currentCell) {
             List<Vector3Int> adjacentCells = new List<Vector3Int>() {
-                new Vector3Int(currentCell.x + 1, currentCell.y - 1, 0),
-                new Vector3Int(currentCell.x - 1, currentCell.y + 1, 0)
+                new (currentCell.x + 1, currentCell.y - 1, 0),
+                new (currentCell.x - 1, currentCell.y + 1, 0)
             };
             return adjacentCells;
         }
@@ -191,28 +216,20 @@ namespace _Scripts {
                 axieStateManager.FlipAxie(1f);
             else axieStateManager.FlipAxie(-1f);
             var damage = GetDamage(RandomNumber, targetNumber);
+            _randomNumber = -1;
             EventManager.TriggerEvent(eventDealDamageEnemy, damage);
-            if (enemy == null) {
-                if (!isDefender)
-                    ChangeTarget();
-                else {
-                    axieStateManager.SwitchState(axieStateManager.idleState);
-                }
-            }
+            if (_enemyList.Contains(enemy)) return;
+            if (isAttacker && _enemyList.Count > 0) ChangeTarget();
+            else axieStateManager.SwitchState(axieStateManager.idleState);
         }
 
         private int GetDamage(int attackerNumber, int targetNumber) {
             var calculation = (3 + attackerNumber - targetNumber) % 3;
-            switch (calculation) {
-                case 0:
-                    return 4;
-                case 1:
-                    return 5;
-                case 2:
-                    return 3;
-                default:
-                    return 0;
-            }
+            return calculation switch {
+                0 => 4,
+                1 => 5,
+                _ => 3
+            };
         }
         private GameObject GetAxieAt(Vector3Int position) {
             var worldPosition = map.GetCellCenterWorld(position);
@@ -220,32 +237,14 @@ namespace _Scripts {
             Ray ray = _camera.ScreenPointToRay(screenPoint);
             int layerMask = LayerMask.NameToLayer("AxieOnTile");
             RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, layerMask);
-            if (hit.collider != null) {
+            if (hit.collider is not null) {
                 var axie = hit.collider.transform.parent.gameObject;
                 if (axie.CompareTag("Attacker") || axie.CompareTag("Defender")) {
-                    Debug.Log($"Found axie {axie.tag} at {position}");
+                    // Debug.LogWarning($"{name} found axie {axie.tag} at {position}");
                     return axie;
                 }
             }
             return null;
         }
-        
-        // private void MouseClick() {
-        //     Vector2 mousePosition = _camera.ScreenToWorldPoint(Input.mousePosition);
-        //     Vector3Int gridPosition = map.WorldToCell(mousePosition);
-        //     map.GetTile(gridPosition);
-        //     // Debug.Log($"MousePosition: {mousePosition} - GridPosition: {gridPosition}");
-        //     if (map.HasTile(gridPosition)) {
-        //         destination = map.CellToWorld(gridPosition) - positionOffset;
-        //         if (isTargetOnTheLeft()) axieStateManager.FlipAxie(1f);
-        //         else axieStateManager.FlipAxie(-1f);
-        //     }
-        // }
-
-        // public void OnMouseDown() {
-        //     _isSelected = !_isSelected;
-        //     Debug.Log($"Axie {gameObject.tag} is selected: {_isSelected}");
-        // }
-        
     }
 }

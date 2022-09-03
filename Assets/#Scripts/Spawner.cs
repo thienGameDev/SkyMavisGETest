@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Utilities;
 
 namespace _Scripts {
-    public class Spawner : MonoBehaviour {
+    public class Spawner : StaticInstance<Spawner> {
         [SerializeField] private Tilemap map;
         [SerializeField] private Transform defenderParent;
         [SerializeField] private int defenderCount;
@@ -13,33 +14,28 @@ namespace _Scripts {
         [SerializeField] private GameObject attackerPrefab;
         
         //Debug
-        public GameObject debugPoint;
         public List<GameObject> defenders;
         public List<GameObject> attackers;
         private int _minX, _maxX, _minY, _maxY;
         private Camera _camera;
-
-        private void Awake() {
+        public void SpawnAxies() {
             _camera = Camera.main;
             _minX = map.cellBounds.xMin;
             _maxX = map.cellBounds.xMax;
             _minY = map.cellBounds.yMin;
             _maxY = map.cellBounds.yMax;
-        }
-
-        // Start is called before the first frame update
-        private void Start()
-        {
             // Generate Defenders 
-            GenerateAxie(defenderCount, defenderPrefab, defenderParent, defenders);
+            GenerateAxie(defenderCount, defenderPrefab, defenderParent, defenders, "Defender");
             // Generate Attackers
-            GenerateAxie(attackerCount, attackerPrefab, attackerParent, attackers);
+            GenerateAxie(attackerCount, attackerPrefab, attackerParent, attackers, "Attacker");
         }
-
-        private void GenerateAxie(int axieCount, GameObject axiePrefab, Transform parent, List<GameObject> axieList) {
+        // Start is called before the first frame update
+        
+        private void GenerateAxie(int axieCount, GameObject axiePrefab, Transform parent, List<GameObject> axieList, string name) {
             for (int i = 0; i < axieCount; i++) {
                 var position = RandomizePosition();
                 var axie = Instantiate(axiePrefab, parent);
+                axie.name = $"{name}_{i}";
                 var characterController = axie.GetComponent<AxieController>();
                 characterController.map = map;
                 var positionOffset = characterController.positionOffset;
@@ -54,13 +50,13 @@ namespace _Scripts {
                 y = Random.Range(_minY, _maxY)
             };
             if (map.HasTile(randomLocation) 
-                && !isPositionExisting(randomLocation, defenders) 
-                    && !isPositionExisting(randomLocation, attackers)) 
+                && !IsPositionExisting(randomLocation, defenders) 
+                    && !IsPositionExisting(randomLocation, attackers)) 
                         return randomLocation;
             return RandomizePosition();
         }
 
-        private bool isPositionExisting(Vector3Int position, List<GameObject> axieList) {
+        private bool IsPositionExisting(Vector3Int position, List<GameObject> axieList) {
             foreach (var axie in axieList) {
                 Vector3Int axiePosition = map.WorldToCell(axie.transform.position);
                 if (Vector3Int.Distance(axiePosition, position) == 0) {
@@ -68,11 +64,6 @@ namespace _Scripts {
                 }
             }
             return false;
-        }
-        // Update is called once per frame
-        private void Update()
-        {
-           
         }
     }
 }

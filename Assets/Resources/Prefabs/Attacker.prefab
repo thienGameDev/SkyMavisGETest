@@ -555,7 +555,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   axieStateManager: {fileID: 9076113206462427282}
-  isDefender: 0
+  isAttacker: 1
   maxHitPoint: 0
   currentHitPoint: 0
   map: {fileID: 0}
