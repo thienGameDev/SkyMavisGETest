@@ -31,12 +31,12 @@ namespace _Scripts {
         }
         // Start is called before the first frame update
         
-        private void GenerateAxie(int axieCount, GameObject axiePrefab, Transform parent, List<GameObject> axieList, string name) {
+        private void GenerateAxie(int axieCount, GameObject axiePrefab, Transform parent, List<GameObject> axieList, string type) {
             for (int i = 0; i < axieCount; i++) {
                 var position = RandomizePosition();
                 var axie = Instantiate(axiePrefab, parent);
-                axie.name = $"{name}_{i}";
-                var characterController = axie.GetComponent<AxieController>();
+                axie.name = $"{type}_{i}";
+                var characterController = axie.GetComponentInChildren<AxieController>();
                 characterController.map = map;
                 var positionOffset = characterController.positionOffset;
                 axie.transform.position = map.CellToWorld(position) - positionOffset;
