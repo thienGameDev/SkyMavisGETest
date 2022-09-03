@@ -7,9 +7,7 @@ namespace _Scripts {
     public class Spawner : StaticInstance<Spawner> {
         [SerializeField] private Tilemap map;
         [SerializeField] private Transform defenderParent;
-        [SerializeField] private int defenderCount;
         [SerializeField] private Transform attackerParent;
-        [SerializeField] private int attackerCount;
         [SerializeField] private GameObject defenderPrefab;
         [SerializeField] private GameObject attackerPrefab;
         
@@ -18,12 +16,17 @@ namespace _Scripts {
         public List<GameObject> attackers;
         private int _minX, _maxX, _minY, _maxY;
         private Camera _camera;
-        public void SpawnAxies() {
+
+        protected override void Awake() {
+            base.Awake();
             _camera = Camera.main;
             _minX = map.cellBounds.xMin;
             _maxX = map.cellBounds.xMax;
             _minY = map.cellBounds.yMin;
             _maxY = map.cellBounds.yMax;
+        }
+
+        public void SpawnAxies(int attackerCount, int defenderCount) {
             // Generate Defenders 
             GenerateAxie(defenderCount, defenderPrefab, defenderParent, defenders, "Defender");
             // Generate Attackers
@@ -32,6 +35,12 @@ namespace _Scripts {
         // Start is called before the first frame update
         
         private void GenerateAxie(int axieCount, GameObject axiePrefab, Transform parent, List<GameObject> axieList, string type) {
+            if (axieList.Count > 0) {
+                foreach (var axie in axieList) {
+                    DestroyImmediate(axie);
+                }
+                axieList.Clear();
+            }
             for (int i = 0; i < axieCount; i++) {
                 var position = RandomizePosition();
                 var axie = Instantiate(axiePrefab, parent);

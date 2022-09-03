@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using AxieMixer.Unity;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Random = UnityEngine.Random;
@@ -29,9 +28,9 @@ namespace _Scripts {
         private Camera _camera;
         private bool _isFindingTarget;
         //Debug
-        public List<GameObject> _enemyList;
-        public List<GameObject> _ignoreEnemyList = new List<GameObject>();
-        public GameObject _currentEnemy;
+        private List<GameObject> _enemyList;
+        private List<GameObject> _ignoreEnemyList = new List<GameObject>();
+        private GameObject _currentEnemy;
         
         private Queue<Vector3Int> _pathToEnemy = new Queue<Vector3Int>();
         private Spawner _spawner;
@@ -60,8 +59,8 @@ namespace _Scripts {
             _enemyList = isAttacker ? _spawner.defenders : _spawner.attackers;
         }
 
-        private void DealDamage(int damage) {
-            currentHitPoint -= damage;
+        private void DealDamage(int dmg) {
+            currentHitPoint -= dmg;
             var eventUpdateHealthBar = $"UpdateHealthBar{_instanceId}";
             EventManager.TriggerEvent(eventUpdateHealthBar, currentHitPoint);
             if (currentHitPoint < 0) {
@@ -86,6 +85,7 @@ namespace _Scripts {
             if (_spawner.attackers.Count == 0 || _spawner.defenders.Count == 0) {
                 axieStateManager.SwitchState(axieStateManager.victoryState);
                 _battleEnded = true;
+                EventManager.TriggerEvent("EndGame", 0);
             }
         }
         
@@ -257,7 +257,6 @@ namespace _Scripts {
         private void OnMouseDown() {
             _axieStatsPanel.followObject = this;
             _axieStatsPanel.gameObject.SetActive(true);
-
         }
     }
 }
