@@ -24,9 +24,11 @@ namespace _Scripts
         }
 
         private void Awake() {
+            Mixer.Init();
             PlayerPrefs.SetString("attackerId", attackerAxieId);
             PlayerPrefs.SetString("defenderId", defenderAxieId);
             LoadingAxieGenes();
+            Spawner.Instance.SpawnAxies();
             _currentTimeScale = 0f;
         }
 
@@ -34,8 +36,6 @@ namespace _Scripts
         private void Start()
         {
             Time.timeScale = _currentTimeScale;
-
-            Mixer.Init();
             
             // Debug.Log(PlayerPrefs.GetString("defenderGenes"));
         }
@@ -75,8 +75,8 @@ namespace _Scripts
             if (string.IsNullOrEmpty(defenderGenes)) 
                 StartCoroutine(GetAxiesGenes(defenderAxieId, "defender"));
         }
-        
-        public IEnumerator GetAxiesGenes(string axieId, string type)
+
+        private IEnumerator GetAxiesGenes(string axieId, string type)
         {
             string searchString = "{ axie (axieId: \"" + axieId + "\") { id, genes, newGenes}}";
             JObject jPayload = new JObject();
