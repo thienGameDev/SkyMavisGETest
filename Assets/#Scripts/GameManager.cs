@@ -25,24 +25,30 @@ namespace _Scripts
         [SerializeField] private string attackerAxieId = "4191804";
         [SerializeField] private string defenderAxieId = "2724598";
         private float _currentTimeScale;
+        private bool _isAttackerGenesLoaded;
+        private bool _isDefenderGenesLoaded;
 
         private bool _isPlaying;
+        private bool _started;
 
         private void Awake() {
             Mixer.Init();
-            LoadingAxieGenes();
             PlayerPrefs.SetString("attackerId", attackerAxieId);
             PlayerPrefs.SetString("defenderId", defenderAxieId);
-            SetTimeScale(0f);
         }
 
         // Start is called before the first frame update
         private void Start()
         {
+            LoadingAxieGenes();
             var attackerCount = PlayerPrefs.GetString("attackerCount", "20");
             var defenderCount = PlayerPrefs.GetString("defenderCount", "10");
             attackerCountInput.text = attackerCount;
             defenderCountInput.text = defenderCount;
+        }
+
+        private void Update() {
+            if (_started && _isAttackerGenesLoaded && _isDefenderGenesLoaded) OnStart();
         }
 
         private void OnEnable() {
@@ -65,6 +71,9 @@ namespace _Scripts
         }
 
         private void OnStart() {
+            _started = true;
+            if (!_isAttackerGenesLoaded || !_isDefenderGenesLoaded) return;
+            _started = false;
             backgroundMusic.Play();
             EventManager.StartListening("EndGame", EndGame);
             var attackerCount = attackerCountInput.text;
@@ -72,10 +81,10 @@ namespace _Scripts
             PlayerPrefs.SetString("attackerCount", attackerCount);
             PlayerPrefs.SetString("defenderCount", defenderCount);
             Spawner.Instance.SpawnAxies(Convert.ToInt32(attackerCount), Convert.ToInt32(defenderCount));
-            SetTimeScale(1f);
             preGameUI.gameObject.SetActive(false);
             inGameUI.SetActive(true);
             _isPlaying = true;
+            SetTimeScale(1f);
         }
 
         private void OnPauseOrResume() {
@@ -114,10 +123,12 @@ namespace _Scripts
         private void LoadingAxieGenes() {
             var attackerGenes = PlayerPrefs.GetString("attackerGenes");
             var defenderGenes = PlayerPrefs.GetString("defenderGenes");
-            if (string.IsNullOrEmpty(attackerGenes)) 
+            if (string.IsNullOrEmpty(attackerGenes))
                 StartCoroutine(GetAxiesGenes(attackerAxieId, "attacker"));
-            if (string.IsNullOrEmpty(defenderGenes)) 
+            else _isAttackerGenesLoaded = true;
+            if (string.IsNullOrEmpty(defenderGenes))
                 StartCoroutine(GetAxiesGenes(defenderAxieId, "defender"));
+            else _isDefenderGenesLoaded = true;
         }
 
         private IEnumerator GetAxiesGenes(string axieId, string type)
@@ -143,6 +154,8 @@ namespace _Scripts
                     PlayerPrefs.SetString($"{type}Genes", genesStr);
                 }
             }
+            if (type == "attacker") _isAttackerGenesLoaded = true;
+            else _isDefenderGenesLoaded = true;
         }
     }
 }

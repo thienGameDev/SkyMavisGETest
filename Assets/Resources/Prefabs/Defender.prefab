@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4073596383560696242}
-  - component: {fileID: 5793371058283346671}
   - component: {fileID: 6142037825314041900}
+  - component: {fileID: 5793371058283346671}
   - component: {fileID: 5118353302114355776}
   m_Layer: 6
   m_Name: Defender
@@ -37,6 +37,20 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6142037825314041900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4073596383560696243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 757a8c0b2936430eba269a118f9896d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scale: 0.5
+  skeletonAnimation: {fileID: 0}
 --- !u!114 &5793371058283346671
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -52,24 +66,9 @@ MonoBehaviour:
   axieStateManager: {fileID: 6142037825314041900}
   isAttacker: 0
   maxHitPoint: 0
-  currentHitPoint: 0
   map: {fileID: 0}
   positionOffset: {x: 0, y: -0.2, z: 0}
   damage: 0
---- !u!114 &6142037825314041900
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4073596383560696243}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 757a8c0b2936430eba269a118f9896d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  scale: 0.5
-  skeletonAnimation: {fileID: 0}
 --- !u!58 &5118353302114355776
 CircleCollider2D:
   m_ObjectHideFlags: 0
