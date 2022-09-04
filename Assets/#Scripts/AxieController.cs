@@ -51,7 +51,7 @@ namespace _Scripts {
 
         private void Awake() {
             _camera = Camera.main;
-            _spawner = GameObject.FindWithTag("Spawner").GetComponent<Spawner>();
+            _spawner = Spawner.Instance;
             maxHitPoint = isAttacker ? 16 : 32;
             _currentHitPoint = maxHitPoint;
             _instanceId = gameObject.GetInstanceID();

@@ -37,7 +37,6 @@ namespace _Scripts {
             GenerateAxie(attackerCount, attackerPrefab, attackerParent, attackers, "Attacker");
             isReady = true;
         }
-        // Start is called before the first frame update
 
         private void GenerateAxie(int axieCount, GameObject axiePrefab, Transform parent, List<GameObject> axieList, string type) {
             // Destroy current axies

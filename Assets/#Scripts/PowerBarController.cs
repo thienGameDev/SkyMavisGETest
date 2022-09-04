@@ -1,23 +1,28 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace _Scripts {
     public class PowerBarController : MonoBehaviour {
-        [SerializeField] private Spawner spawner;
         [SerializeField] private RectTransform separator;
         [SerializeField] private RectTransform attackerPower;
         private float _smoothTime = .5f;
+        private Spawner _spawner;
         private int _totalAttackerPower;
         private int _totalDefenderPower;
         private Vector2 _vel2;
         private Vector3 _vel3;
 
+        private void Awake() {
+            _spawner = Spawner.Instance;
+        }
+
         // Update is called once per frame
         private void Update()
         {
-            _totalAttackerPower = GetTotalPower(spawner.attackers);
+            _totalAttackerPower = GetTotalPower(_spawner.attackers);
             // Debug.LogWarning($"Total Attacker Power: {_totalAttackerPower}");
-            _totalDefenderPower = GetTotalPower(spawner.defenders);
+            _totalDefenderPower = GetTotalPower(_spawner.defenders);
             // Debug.LogWarning($"Total Defender Power {_totalDefenderPower}");
             if (_totalAttackerPower != 0 || _totalDefenderPower != 0) {
                 UpdatePowerBar();
