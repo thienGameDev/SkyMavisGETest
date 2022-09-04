@@ -1,32 +1,46 @@
+using System;
 using UnityEngine;
 
 namespace _Scripts {
     public class HealthBarController : MonoBehaviour {
-        [SerializeField] private GameObject redHealthBar;
-        [SerializeField] private GameObject orangeHealthBar;
-        private int _maxHitPoint;
+        [SerializeField] private GameObject innerHealthBar;
+        [SerializeField] private GameObject outerHealthBar;
+        private string _eventUpdateHealthBar;
         private Vector3 _localScale;
-        private float _vel;
+        private int _maxHitPoint;
+        private bool _quit;
         private float _smoothTime = .25f;
+        private float _vel;
+
         // Start is called before the first frame update
         void Start() {
-            _localScale = orangeHealthBar.transform.localScale;
+            _localScale = outerHealthBar.transform.localScale;
             var parent = transform.parent.gameObject;
-            _maxHitPoint = parent.GetComponentInChildren<AxieController>().maxHitPoint;
+            _maxHitPoint = parent.GetComponent<AxieController>().maxHitPoint;
             var parentId = parent.GetInstanceID();
-            var eventUpdateHealthBar = $"UpdateHealthBar{parentId}";
-            EventManager.StartListening(eventUpdateHealthBar, UpdateHealthBar);
+            _eventUpdateHealthBar = "UpdateHealthBar" + parentId;
+            EventManager.StartListening(_eventUpdateHealthBar, UpdateHealthBar);
+        }
+
+        // Update is called once per frame
+        private void Update() {
+            var localScale = innerHealthBar.transform.localScale;
+            localScale.x = Mathf.SmoothDamp(localScale.x, _localScale.x, ref _vel, _smoothTime);
+            innerHealthBar.transform.localScale = localScale;
+        }
+
+        private void OnDisable() {
+            if (_quit) return;
+            EventManager.StopListening(_eventUpdateHealthBar, UpdateHealthBar);
+        }
+
+        private void OnApplicationQuit() {
+            _quit = true;
         }
 
         private void UpdateHealthBar(int currentHealth) {
             _localScale.x = (float) currentHealth / _maxHitPoint;
-            orangeHealthBar.transform.localScale = _localScale;
-        }
-        // Update is called once per frame
-        void Update() {
-            var redBarScale = redHealthBar.transform.localScale;
-            redBarScale.x = Mathf.SmoothDamp(redBarScale.x, _localScale.x, ref _vel, _smoothTime);
-            redHealthBar.transform.localScale = redBarScale;
+            outerHealthBar.transform.localScale = _localScale;
         }
     }
 }
