@@ -91,16 +91,16 @@ namespace _Scripts {
             _currentHitPoint -= dmg;
             var eventUpdateHealthBar = $"UpdateHealthBar{_instanceId}";
             EventManager.TriggerEvent(eventUpdateHealthBar, CurrentHitPoint);
-            if (_currentHitPoint < 0) {
+            if (_currentHitPoint <= 0) {
                 Dead();
             }
         }
 
         private void Dead() {
-            EventManager.StopListening(_eventDealDamage, DealDamage);
             if (isAttacker) _spawner.attackers.Remove(gameObject);
             else _spawner.defenders.Remove(gameObject);
             Destroy(gameObject);
+            EventManager.StopListening(_eventDealDamage, DealDamage);
         }
 
         private void CheckForAction() {
