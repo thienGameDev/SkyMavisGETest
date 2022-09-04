@@ -1,12 +1,11 @@
-using System;
 using UnityEngine;
 
 namespace _Scripts {
     public class HealthBarController : MonoBehaviour {
         [SerializeField] private GameObject innerHealthBar;
         [SerializeField] private GameObject outerHealthBar;
+        private int _currentHitPoint;
         private string _eventUpdateHealthBar;
-        private Vector3 _localScale;
         private int _maxHitPoint;
         private bool _quit;
         private float _smoothTime = .25f;
@@ -14,9 +13,10 @@ namespace _Scripts {
 
         // Start is called before the first frame update
         void Start() {
-            _localScale = outerHealthBar.transform.localScale;
             var parent = transform.parent.gameObject;
-            _maxHitPoint = parent.GetComponent<AxieController>().maxHitPoint;
+            var axieController = parent.GetComponent<AxieController>();
+            _maxHitPoint = axieController.maxHitPoint;
+            _currentHitPoint =_maxHitPoint;
             var parentId = parent.GetInstanceID();
             _eventUpdateHealthBar = "UpdateHealthBar" + parentId;
             EventManager.StartListening(_eventUpdateHealthBar, UpdateHealthBar);
@@ -25,7 +25,8 @@ namespace _Scripts {
         // Update is called once per frame
         private void Update() {
             var localScale = innerHealthBar.transform.localScale;
-            localScale.x = Mathf.SmoothDamp(localScale.x, _localScale.x, ref _vel, _smoothTime);
+            var targetScale = GetScaleXAmount();
+            localScale.x = Mathf.SmoothDamp(localScale.x, targetScale, ref _vel, _smoothTime);
             innerHealthBar.transform.localScale = localScale;
         }
 
@@ -38,9 +39,16 @@ namespace _Scripts {
             _quit = true;
         }
 
+        private float GetScaleXAmount() {
+            return (float) _currentHitPoint / _maxHitPoint;
+            
+        }
+
         private void UpdateHealthBar(int currentHealth) {
-            _localScale.x = (float) currentHealth / _maxHitPoint;
-            outerHealthBar.transform.localScale = _localScale;
+            _currentHitPoint = currentHealth;
+            var localScale = outerHealthBar.transform.localScale;
+            localScale.x = GetScaleXAmount();
+            outerHealthBar.transform.localScale = localScale;
         }
     }
 }

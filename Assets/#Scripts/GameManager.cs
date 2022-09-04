@@ -11,6 +11,8 @@ namespace _Scripts
 {
     public class GameManager : MonoBehaviour
     {
+        private const float MAX_INCREASE = 16f;
+        private const float MIN_DECREASE = 0.5f;
         [SerializeField] private GameObject preGameUI;
         [SerializeField] private Button startBtn;
         [SerializeField] private TMP_InputField attackerCountInput;
@@ -19,14 +21,30 @@ namespace _Scripts
         [SerializeField] private Button pauseBtn;
         [SerializeField] private Button increaseSpeedBtn;
         [SerializeField] private Button decreaseSpeedBtn;
-        
+
         [SerializeField] private string attackerAxieId = "4191804";
         [SerializeField] private string defenderAxieId = "2724598";
-        
-        private bool _isPlaying;
         private float _currentTimeScale;
-        private const float MAX_INCREASE = 16f;
-        private const float MIN_DECREASE = 0.5f;
+
+        private bool _isPlaying;
+
+        private void Awake() {
+            PlayerPrefs.SetString("attackerId", attackerAxieId);
+            PlayerPrefs.SetString("defenderId", defenderAxieId);
+            SetTimeScale(0f);
+        }
+
+        // Start is called before the first frame update
+        private void Start()
+        {
+            Mixer.Init();
+            LoadingAxieGenes();
+            var attackerCount = PlayerPrefs.GetString("attackerCount", "20");
+            var defenderCount = PlayerPrefs.GetString("defenderCount", "10");
+            attackerCountInput.text = attackerCount;
+            defenderCountInput.text = defenderCount;
+        }
+
         private void OnEnable() {
             startBtn.onClick.AddListener(OnStart);
             pauseBtn.onClick.AddListener(OnPauseOrResume);
@@ -40,25 +58,12 @@ namespace _Scripts
             increaseSpeedBtn.onClick.RemoveListener(OnIncreasingSpeed);
             decreaseSpeedBtn.onClick.RemoveListener(OnDecreasingSpeed);
         }
-        
-        private void Awake() {
-            Mixer.Init();
-            PlayerPrefs.SetString("attackerId", attackerAxieId);
-            PlayerPrefs.SetString("defenderId", defenderAxieId);
-            LoadingAxieGenes();
-            _currentTimeScale = 0f;
+
+        private void SetTimeScale(float scale) {
+            _currentTimeScale = scale;
+            Time.timeScale = _currentTimeScale;
         }
 
-        // Start is called before the first frame update
-        private void Start()
-        {
-            Time.timeScale = _currentTimeScale;
-            var attackerCount = PlayerPrefs.GetString("attackerCount", "20");
-            var defenderCount = PlayerPrefs.GetString("defenderCount", "10");
-            attackerCountInput.text = attackerCount;
-            defenderCountInput.text = defenderCount;
-        }
-        
         private void OnStart() {
             EventManager.StartListening("EndGame", EndGame);
             var attackerCount = attackerCountInput.text;
@@ -66,8 +71,7 @@ namespace _Scripts
             PlayerPrefs.SetString("attackerCount", attackerCount);
             PlayerPrefs.SetString("defenderCount", defenderCount);
             Spawner.Instance.SpawnAxies(Convert.ToInt32(attackerCount), Convert.ToInt32(defenderCount));
-            _currentTimeScale = 1f;
-            Time.timeScale = _currentTimeScale;
+            SetTimeScale(1f);
             preGameUI.gameObject.SetActive(false);
             inGameUI.SetActive(true);
             _isPlaying = true;
@@ -91,16 +95,15 @@ namespace _Scripts
             if (_currentTimeScale < MIN_DECREASE) _currentTimeScale = MIN_DECREASE;
             Time.timeScale = _currentTimeScale;
         }
-        
+
         private void EndGame(int param) {
-            _currentTimeScale = 1f;
-            Time.timeScale = _currentTimeScale;
+            SetTimeScale(1f);
             EventManager.StopListening("EndGame", EndGame);
             inGameUI.SetActive(false);
             startBtn.GetComponentInChildren<Text>().text = "Restart";
             preGameUI.gameObject.SetActive(true);
         }
-        
+
         private void LoadingAxieGenes() {
             var attackerGenes = PlayerPrefs.GetString("attackerGenes");
             var defenderGenes = PlayerPrefs.GetString("defenderGenes");

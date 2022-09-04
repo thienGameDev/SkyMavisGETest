@@ -1,85 +1,73 @@
 using System.Collections.Generic;
-using AxieMixer.Unity;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Random = UnityEngine.Random;
 
 namespace _Scripts {
     public class AxieController : MonoBehaviour {
+        private const float COUNT_DOWN = 1f;
         [SerializeField] private AxieStateManager axieStateManager;
         public bool isAttacker;
         public int maxHitPoint;
-        public int currentHitPoint;
         public Tilemap map;
         public Vector3 positionOffset;
+
+        public int damage;
+
+        //UI stats panel
+        private StatsPanel _axieStatsPanel;
+        private bool _battleEnded;
+        private Camera _camera;
+        private GameObject _currentEnemy;
+
+        private int _currentHitPoint;
+
+        //Debug
+        private List<GameObject> _enemyList;
+        private string _eventDealDamage;
+        private List<GameObject> _ignoreEnemyList = new List<GameObject>();
+        private int _instanceId;
+        private bool _isFindingTarget;
+
+        private Queue<Vector3Int> _pathToEnemy = new Queue<Vector3Int>();
+
+        private int _randomNumber = -1;
+        private Spawner _spawner;
+        private float _timeRemaining;
+        public int CurrentHitPoint => _currentHitPoint < 0 ? 0 : _currentHitPoint;
+
         public int RandomNumber {
             get {
                 if (_randomNumber == -1) _randomNumber = Random.Range(0, 3);
                 return _randomNumber;
             }
         }
-        //UI stats panel
-        private StatsPanel _axieStatsPanel;
-        
-        private int _randomNumber = -1;
-        public int damage;
-        private const float TIME_FOR_CHECKING = 1f;
-        private float _timeRemaining;
-        private Camera _camera;
-        private bool _isFindingTarget;
-        //Debug
-        private List<GameObject> _enemyList;
-        private List<GameObject> _ignoreEnemyList = new List<GameObject>();
-        private GameObject _currentEnemy;
-        
-        private Queue<Vector3Int> _pathToEnemy = new Queue<Vector3Int>();
-        private Spawner _spawner;
-        private string _eventDealDamage;
-        private string _instanceId;
-        private bool _battleEnded;
 
         private void Awake() {
-            Mixer.Init();
             _camera = Camera.main;
             _spawner = GameObject.FindWithTag("Spawner").GetComponent<Spawner>();
             maxHitPoint = isAttacker ? 16 : 32;
-            currentHitPoint = maxHitPoint;
-            _instanceId = gameObject.GetInstanceID().ToString();
+            _currentHitPoint = maxHitPoint;
+            _instanceId = gameObject.GetInstanceID();
             _eventDealDamage = $"DealDamage{_instanceId}";
             EventManager.StartListening(_eventDealDamage, DealDamage);
             SetupStatsPanel();
         }
 
-        private void SetupStatsPanel() {
-            var canvas = GameObject.FindGameObjectWithTag("UICanvas");
-            _axieStatsPanel = canvas.transform.Find("AxieStats").gameObject.GetComponent<StatsPanel>();
-        }
         // Start is called before the first frame update
         private void Start() {
             _enemyList = isAttacker ? _spawner.defenders : _spawner.attackers;
         }
 
-        private void DealDamage(int dmg) {
-            currentHitPoint -= dmg;
-            var eventUpdateHealthBar = $"UpdateHealthBar{_instanceId}";
-            EventManager.TriggerEvent(eventUpdateHealthBar, currentHitPoint);
-            if (currentHitPoint < 0) {
-                currentHitPoint = 0;
-                EventManager.StopListening(_eventDealDamage, DealDamage);
-                if (isAttacker) _spawner.attackers.Remove(gameObject);
-                else _spawner.defenders.Remove(gameObject);
-                DestroyImmediate(gameObject);
-            }
-            
-        }
-
         private void Update() {
             if (_timeRemaining > 0) {
+                //Start countdown
                 _timeRemaining -= Time.deltaTime;
             }
             else {
                 CheckForAction();
-                _timeRemaining = TIME_FOR_CHECKING;
+                //Reset Countdown
+                _timeRemaining = COUNT_DOWN;
             }
             if (_battleEnded) return;
             if (_spawner.attackers.Count == 0 || _spawner.defenders.Count == 0) {
@@ -88,7 +76,33 @@ namespace _Scripts {
                 EventManager.TriggerEvent("EndGame", 0);
             }
         }
-        
+
+        private void OnMouseDown() {
+            _axieStatsPanel.followObject = this;
+            _axieStatsPanel.gameObject.SetActive(true);
+        }
+
+        private void SetupStatsPanel() {
+            var canvas = GameObject.FindGameObjectWithTag("UICanvas");
+            _axieStatsPanel = canvas.transform.Find("AxieStats").gameObject.GetComponent<StatsPanel>();
+        }
+
+        private void DealDamage(int dmg) {
+            _currentHitPoint -= dmg;
+            var eventUpdateHealthBar = $"UpdateHealthBar{_instanceId}";
+            EventManager.TriggerEvent(eventUpdateHealthBar, CurrentHitPoint);
+            if (_currentHitPoint < 0) {
+                Dead();
+            }
+        }
+
+        private void Dead() {
+            EventManager.StopListening(_eventDealDamage, DealDamage);
+            if (isAttacker) _spawner.attackers.Remove(gameObject);
+            else _spawner.defenders.Remove(gameObject);
+            Destroy(gameObject);
+        }
+
         private void CheckForAction() {
             var adjacentEnemy = GetAdjacentEnemy();
             if (adjacentEnemy is not null) Attack(adjacentEnemy);
@@ -98,6 +112,7 @@ namespace _Scripts {
                 } 
             }
         }
+
         private void MoveToClosestEnemy() {
             // Find closest enemy
             if (_pathToEnemy.Count == 0) {
@@ -131,19 +146,20 @@ namespace _Scripts {
                 }
             }
         }
-        
+
         private void ChangeTarget() {
             _ignoreEnemyList.Add(_currentEnemy);
             axieStateManager.SwitchState(axieStateManager.idleState);
             Debug.LogWarning($"{name} has changed target");
         }
+
         private bool isTargetOnTheLeft(Vector3Int destination) {
             var currentPosition = map.WorldToCell(transform.position);
             var direction = destination - currentPosition;
             // Debug.Log($"Direction: {direction}");
             return direction.x < 0 || direction.y > 0;
         }
-        
+
         private GameObject GetAdjacentEnemy() {
             var currentCell = map.WorldToCell(transform.position);
             var adjacentCells = GetAdjacentCells(currentCell);
@@ -155,7 +171,7 @@ namespace _Scripts {
             // Debug.LogWarning("No adjacent enemy");
             return null;
         }
-        
+
         private GameObject FindClosestEnemy() {
             if (_enemyList.Count == 0) {
                 return null;
@@ -174,7 +190,7 @@ namespace _Scripts {
             }
             return closestEnemy;
         }
-        
+
         private void FindPathToClosestEnemy(GameObject closestEnemy) {
             _pathToEnemy.Clear();
             var enemyPosition = map.WorldToCell(closestEnemy.transform.position);
@@ -212,7 +228,7 @@ namespace _Scripts {
             };
             return adjacentCells;
         }
-        
+
         private void Attack(GameObject enemy) {
             var eventDealDamageEnemy = $"DealDamage{enemy.GetInstanceID()}";
             var enemyController = enemy.GetComponentInChildren<AxieController>();
@@ -230,7 +246,7 @@ namespace _Scripts {
             else axieStateManager.SwitchState(axieStateManager.idleState);
         }
 
-        private int GetDamage(int attackerNumber, int targetNumber) {
+        private static int GetDamage(int attackerNumber, int targetNumber) {
             var calculation = (3 + attackerNumber - targetNumber) % 3;
             return calculation switch {
                 0 => 4,
@@ -238,6 +254,7 @@ namespace _Scripts {
                 _ => 3
             };
         }
+
         private GameObject GetAxieAt(Vector3Int position) {
             var worldPosition = map.GetCellCenterWorld(position);
             var screenPoint = _camera.WorldToScreenPoint(worldPosition);
@@ -252,11 +269,6 @@ namespace _Scripts {
                 }
             }
             return null;
-        }
-
-        private void OnMouseDown() {
-            _axieStatsPanel.followObject = this;
-            _axieStatsPanel.gameObject.SetActive(true);
         }
     }
 }
