@@ -7,12 +7,13 @@ namespace _Scripts {
     public class AxieStateManager : MonoBehaviour {
         [SerializeField] private float scale = .5f;
         public SkeletonAnimation skeletonAnimation;
-        private AxieBaseState _currentState;
-        public AxieBaseState idleState = new AxieIdleState();
-        public AxieBaseState walkingState = new AxieWalkingState();
-        public AxieBaseState attackingState = new AxieAttackingState();
-        public AxieBaseState victoryState = new AxieVictoryState();
         private bool _isAttacker;
+        public AxieBaseState attackingState = new AxieAttackingState();
+        public AxieBaseState currentState;
+        public AxieBaseState idleState = new AxieIdleState();
+        public AxieBaseState victoryState = new AxieVictoryState();
+        public AxieBaseState walkingState = new AxieWalkingState();
+
         private void Awake() {
             _isAttacker = GetComponent<AxieController>().isAttacker;
         }
@@ -20,8 +21,8 @@ namespace _Scripts {
         private void Start() {
             SetGenes();
             RandomFlipAxie();
-            _currentState = idleState;
-            _currentState.EnterState(this);
+            currentState = idleState;
+            currentState.EnterState(this);
         }
 
         private void SetGenes() {
@@ -47,10 +48,10 @@ namespace _Scripts {
         public void FlipAxie(float direction) {
             skeletonAnimation.skeleton.ScaleX = direction;
         }
-        
+
         public void SwitchState(AxieBaseState newState) {
-            _currentState = newState;
-            _currentState.EnterState(this);
+            currentState = newState;
+            currentState.EnterState(this);
         }
     }
 }

@@ -11,15 +11,12 @@ namespace _Scripts {
         public int maxHitPoint;
         public Tilemap map;
         public Vector3 positionOffset;
-
         public int damage;
 
-        //UI stats panel
         private StatsPanel _axieStatsPanel;
         private bool _battleEnded;
         private Camera _camera;
         private GameObject _currentEnemy;
-
         private int _currentHitPoint;
 
         //Debug
@@ -34,6 +31,15 @@ namespace _Scripts {
         private int _randomNumber = -1;
         private Spawner _spawner;
         private float _timeRemaining;
+        public string CurrentTarget => _currentEnemy ? _currentEnemy.name : "";
+
+        public string CurrentState {
+            get {
+                var currentStateString = axieStateManager.currentState.GetType().ToString();
+                return currentStateString.Replace("_Scripts.Axie", "").Replace("State", "");
+            }
+        }
+
         public int CurrentHitPoint => _currentHitPoint < 0 ? 0 : _currentHitPoint;
 
         public int RandomNumber {
@@ -230,6 +236,7 @@ namespace _Scripts {
         }
 
         private void Attack(GameObject enemy) {
+            if (!isAttacker) _currentEnemy = enemy;
             var eventDealDamageEnemy = $"DealDamage{enemy.GetInstanceID()}";
             var enemyController = enemy.GetComponentInChildren<AxieController>();
             var targetNumber = enemyController.RandomNumber;
