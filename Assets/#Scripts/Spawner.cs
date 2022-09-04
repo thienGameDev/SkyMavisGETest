@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -9,6 +8,9 @@ using Random = UnityEngine.Random;
 namespace _Scripts {
     public class Spawner : StaticInstance<Spawner> {
         private const int MAX_AXIE_COUNT = 100;
+        public int maxAttackerHp = 16;
+        public int maxDefenderHp = 32;
+
         [SerializeField] private Tilemap map;
         [SerializeField] private Transform defenderParent;
         [SerializeField] private Transform attackerParent;
@@ -87,6 +89,7 @@ namespace _Scripts {
                 var axie = Instantiate(axiePrefab, parent);
                 axie.name = $"{type}_{i}";
                 var axieController = axie.GetComponent<AxieController>();
+                axieController.maxHitPoint = type.Contains("Attacker") ? maxAttackerHp : maxDefenderHp;
                 axieController.map = map;
                 var positionOffset = axieController.positionOffset;
                 axie.transform.position = map.CellToWorld(position) - positionOffset;

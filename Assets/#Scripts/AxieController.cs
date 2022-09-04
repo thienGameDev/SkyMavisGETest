@@ -51,8 +51,6 @@ namespace _Scripts {
         private void Awake() {
             _camera = Camera.main;
             _spawner = Spawner.Instance;
-            maxHitPoint = isAttacker ? 16 : 32;
-            _currentHitPoint = maxHitPoint;
             _instanceId = gameObject.GetInstanceID();
             _eventDealDamage = $"DealDamage{_instanceId}";
             EventManager.StartListening(_eventDealDamage, DealDamage);
@@ -61,6 +59,7 @@ namespace _Scripts {
 
         // Start is called before the first frame update
         private void Start() {
+            _currentHitPoint = maxHitPoint;
             _enemyList = isAttacker ? _spawner.defenders : _spawner.attackers;
         }
 
@@ -231,23 +230,29 @@ namespace _Scripts {
 
         private void Attack(GameObject enemy) {
             if (!isAttacker) _currentEnemy = enemy;
-            var eventDealDamageEnemy = $"DealDamage{enemy.GetInstanceID()}";
-            var enemyController = enemy.GetComponentInChildren<AxieController>();
-            var targetNumber = enemyController.RandomNumber;
             axieStateManager.SwitchState(axieStateManager.attackingState);
             var enemyPosition = map.WorldToCell(enemy.transform.position);
-            if (isTargetOnTheLeft(enemyPosition)) 
-                axieStateManager.FlipAxie(1f);
+            if (isTargetOnTheLeft(enemyPosition)) axieStateManager.FlipAxie(1f);
             else axieStateManager.FlipAxie(-1f);
-            damage = GetDamage(RandomNumber, targetNumber);
-            _randomNumber = -1;
-            EventManager.TriggerEvent(eventDealDamageEnemy, damage);
+            DealDamageToEnemy(enemy);
             if (_enemyList.Contains(enemy)) return;
             if (isAttacker && _enemyList.Count > 0) ChangeTarget();
             else axieStateManager.SwitchState(axieStateManager.idleState);
         }
 
-        private static int GetDamage(int attackerNumber, int targetNumber) {
+        private void DealDamageToEnemy(GameObject enemy) {
+            var targetNumber = enemy.GetComponentInChildren<AxieController>().RandomNumber;
+            damage = GetDamage(RandomNumber, targetNumber);
+            EventManager.TriggerEvent($"DealDamage{enemy.GetInstanceID()}", damage);
+            EventManager.TriggerEvent("UpdatePower", isAttacker ? damage : -damage);
+        }
+
+        private void ResetRandomNumber() {
+            _randomNumber = -1;
+        }
+
+        private int GetDamage(int attackerNumber, int targetNumber) {
+            ResetRandomNumber();
             var calculation = (3 + attackerNumber - targetNumber) % 3;
             return calculation switch {
                 0 => 4,
