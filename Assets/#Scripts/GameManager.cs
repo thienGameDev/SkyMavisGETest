@@ -21,7 +21,7 @@ namespace _Scripts
         [SerializeField] private Button pauseBtn;
         [SerializeField] private Button increaseSpeedBtn;
         [SerializeField] private Button decreaseSpeedBtn;
-
+        [SerializeField] private AudioSource backgroundMusic;
         [SerializeField] private string attackerAxieId = "4191804";
         [SerializeField] private string defenderAxieId = "2724598";
         private float _currentTimeScale;
@@ -65,6 +65,7 @@ namespace _Scripts
         }
 
         private void OnStart() {
+            backgroundMusic.Play();
             EventManager.StartListening("EndGame", EndGame);
             var attackerCount = attackerCountInput.text;
             var defenderCount = defenderCountInput.text;
@@ -81,6 +82,12 @@ namespace _Scripts
             Time.timeScale = _isPlaying ? 0f : _currentTimeScale;
             pauseBtn.GetComponentInChildren<Text>().text = _isPlaying ? "Resume" : "Pause";
             increaseSpeedBtn.enabled = decreaseSpeedBtn.enabled = !_isPlaying;
+            if (_isPlaying) {
+                backgroundMusic.Pause();
+            }
+            else {
+                backgroundMusic.Play();
+            }
             _isPlaying = !_isPlaying;
         }
 
