@@ -14,7 +14,6 @@ namespace _Scripts {
         public int damage;
 
         private StatsPanel _axieStatsPanel;
-        private bool _battleEnded;
         private Camera _camera;
         private GameObject _currentEnemy;
         private int _currentHitPoint;
@@ -66,7 +65,7 @@ namespace _Scripts {
         }
 
         private void Update() {
-            if (!_spawner.isReady) return;
+            if (!_spawner.isReady || !axieStateManager.isReady) return;
             if (_timeRemaining > 0) {
                 //Start countdown
                 _timeRemaining -= Time.deltaTime;
@@ -75,12 +74,6 @@ namespace _Scripts {
                 CheckForAction();
                 //Reset Countdown
                 _timeRemaining = COUNT_DOWN;
-            }
-            if (_battleEnded) return;
-            if (_spawner.attackers.Count == 0 || _spawner.defenders.Count == 0) {
-                axieStateManager.SwitchState(axieStateManager.victoryState);
-                _battleEnded = true;
-                EventManager.TriggerEvent("EndGame", 0);
             }
         }
 

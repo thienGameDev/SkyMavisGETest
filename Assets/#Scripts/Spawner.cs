@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Utilities;
+using Random = UnityEngine.Random;
 
 namespace _Scripts {
     public class Spawner : StaticInstance<Spawner> {
@@ -17,12 +19,31 @@ namespace _Scripts {
         public bool isReady;
         public List<GameObject> defenders;
         public List<GameObject> attackers;
+        private bool _battleEnded;
         private List<Vector3Int> _cellPositionList = new List<Vector3Int>();
+        private int _tempAxieCount;
 
         protected override void Awake() {
             base.Awake();
             GetAllCellPosition();
             ShuffleCells();
+        }
+
+        private void Update() {
+            if (_battleEnded) return;
+            if (attackers.Count == 0 || defenders.Count == 0) {
+                SwitchStateForTeam(attackers);
+                SwitchStateForTeam(defenders);
+                EventManager.TriggerEvent("EndGame", 0);
+                _battleEnded = true;
+            }
+        }
+
+        private void SwitchStateForTeam(List<GameObject> team) {
+            foreach (var axie in team) {
+                var axieStateManager = axie.GetComponent<AxieStateManager>();
+                axieStateManager.SwitchState(axieStateManager.victoryState);
+            }
         }
 
         private void GetAllCellPosition() {
@@ -38,6 +59,7 @@ namespace _Scripts {
         }
 
         public void SpawnAxies(int attackerCount, int defenderCount) {
+            _tempAxieCount = 0;
             isReady = false;
             ShuffleCells();
             if (attackerCount > MAX_AXIE_COUNT) attackerCount = MAX_AXIE_COUNT;
@@ -46,6 +68,7 @@ namespace _Scripts {
             GenerateAxie(defenderCount, defenderPrefab, defenderParent, defenders, "Defender");
             // Generate Attackers
             GenerateAxie(attackerCount, attackerPrefab, attackerParent, attackers, "Attacker");
+            _battleEnded = false;
             isReady = true;
         }
 
@@ -59,7 +82,7 @@ namespace _Scripts {
             }
             
             //Generate new axies
-            for (int i = 0; i < axieCount; i++) {
+            for (int i = _tempAxieCount; i < axieCount + _tempAxieCount; i++) {
                 var position = _cellPositionList[i];
                 var axie = Instantiate(axiePrefab, parent);
                 axie.name = $"{type}_{i}";
@@ -69,6 +92,8 @@ namespace _Scripts {
                 axie.transform.position = map.CellToWorld(position) - positionOffset;
                 axieList.Add(axie);
             }
+
+            _tempAxieCount += Random.Range(axieCount, _cellPositionList.Count);
         }
     }
 }

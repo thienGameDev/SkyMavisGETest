@@ -7,27 +7,25 @@ namespace _Scripts {
     public class AxieStateManager : MonoBehaviour {
         [SerializeField] private float scale = .5f;
         public SkeletonAnimation skeletonAnimation;
-        private bool _isAttacker;
+        public bool isAttacker;
+        public bool isReady;
         public AxieBaseState attackingState = new AxieAttackingState();
         public AxieBaseState currentState;
         public AxieBaseState idleState = new AxieIdleState();
         public AxieBaseState victoryState = new AxieVictoryState();
         public AxieBaseState walkingState = new AxieWalkingState();
 
-        private void Awake() {
-            _isAttacker = GetComponent<AxieController>().isAttacker;
-        }
-
         private void Start() {
             SetGenes();
             RandomFlipAxie();
             currentState = idleState;
             currentState.EnterState(this);
+            isReady = true;
         }
 
         private void SetGenes() {
-            var axieId = PlayerPrefs.GetString(_isAttacker ? "attackerId" : "defenderId");
-            var genes = PlayerPrefs.GetString(_isAttacker ? "attackerGenes" :"defenderGenes");
+            var axieId = PlayerPrefs.GetString(isAttacker ? "attackerId" : "defenderId");
+            var genes = PlayerPrefs.GetString(isAttacker ? "attackerGenes" :"defenderGenes");
             skeletonAnimation = GetComponentInChildren<SkeletonAnimation>();
             Mixer.SpawnSkeletonAnimation(skeletonAnimation, axieId, genes);
             var meshRender = GetComponentInChildren<MeshRenderer>();

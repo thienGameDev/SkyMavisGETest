@@ -9,9 +9,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1340046367194403262}
-  - component: {fileID: 4771311922722938464}
-  - component: {fileID: 1370923961317365565}
-  - component: {fileID: 3791618848255241188}
+  - component: {fileID: 6221857412092211737}
+  - component: {fileID: 4414877100150944840}
+  - component: {fileID: 8403664762009769955}
   m_Layer: 6
   m_Name: SkeletonAnimation
   m_TagString: Untagged
@@ -34,7 +34,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &4771311922722938464
+--- !u!33 &6221857412092211737
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -42,7 +42,7 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2222835033973883970}
   m_Mesh: {fileID: 0}
---- !u!23 &1370923961317365565
+--- !u!23 &4414877100150944840
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -84,7 +84,7 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &3791618848255241188
+--- !u!114 &8403664762009769955
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

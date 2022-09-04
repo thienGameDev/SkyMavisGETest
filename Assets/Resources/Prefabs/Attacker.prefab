@@ -51,6 +51,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scale: 0.5
   skeletonAnimation: {fileID: 0}
+  isAttacker: 1
+  isReady: 0
 --- !u!114 &8498274663424502880
 MonoBehaviour:
   m_ObjectHideFlags: 0
