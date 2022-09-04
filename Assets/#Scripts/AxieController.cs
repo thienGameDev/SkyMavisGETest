@@ -66,6 +66,7 @@ namespace _Scripts {
         }
 
         private void Update() {
+            if (!_spawner.isReady) return;
             if (_timeRemaining > 0) {
                 //Start countdown
                 _timeRemaining -= Time.deltaTime;

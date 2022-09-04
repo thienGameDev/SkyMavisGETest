@@ -29,6 +29,8 @@ namespace _Scripts
         private bool _isPlaying;
 
         private void Awake() {
+            Mixer.Init();
+            LoadingAxieGenes();
             PlayerPrefs.SetString("attackerId", attackerAxieId);
             PlayerPrefs.SetString("defenderId", defenderAxieId);
             SetTimeScale(0f);
@@ -37,8 +39,6 @@ namespace _Scripts
         // Start is called before the first frame update
         private void Start()
         {
-            Mixer.Init();
-            LoadingAxieGenes();
             var attackerCount = PlayerPrefs.GetString("attackerCount", "20");
             var defenderCount = PlayerPrefs.GetString("defenderCount", "10");
             attackerCountInput.text = attackerCount;
