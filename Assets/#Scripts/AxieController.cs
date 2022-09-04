@@ -20,7 +20,6 @@ namespace _Scripts {
 
         //Debug
         private List<GameObject> _enemyList;
-        private string _eventDealDamage;
         private List<GameObject> _ignoreEnemyList = new List<GameObject>();
         private int _instanceId;
         private bool _isFindingTarget;
@@ -52,8 +51,6 @@ namespace _Scripts {
             _camera = Camera.main;
             _spawner = Spawner.Instance;
             _instanceId = gameObject.GetInstanceID();
-            _eventDealDamage = $"DealDamage{_instanceId}";
-            EventManager.StartListening(_eventDealDamage, DealDamage);
             SetupStatsPanel();
         }
 
@@ -86,7 +83,7 @@ namespace _Scripts {
             _axieStatsPanel = canvas.transform.Find("AxieStats").gameObject.GetComponent<StatsPanel>();
         }
 
-        private void DealDamage(int dmg) {
+        public void DealDamage(int dmg) {
             _currentHitPoint -= dmg;
             var eventUpdateHealthBar = $"UpdateHealthBar{_instanceId}";
             EventManager.TriggerEvent(eventUpdateHealthBar, CurrentHitPoint);
@@ -99,7 +96,6 @@ namespace _Scripts {
             if (isAttacker) _spawner.attackers.Remove(gameObject);
             else _spawner.defenders.Remove(gameObject);
             Destroy(gameObject);
-            EventManager.StopListening(_eventDealDamage, DealDamage);
         }
 
         private void CheckForAction() {
@@ -241,10 +237,10 @@ namespace _Scripts {
         }
 
         private void DealDamageToEnemy(GameObject enemy) {
-            var targetNumber = enemy.GetComponentInChildren<AxieController>().RandomNumber;
+            var enemyController = enemy.GetComponent<AxieController>();
+            var targetNumber = enemyController.RandomNumber;
             damage = GetDamage(RandomNumber, targetNumber);
-            EventManager.TriggerEvent($"DealDamage{enemy.GetInstanceID()}", damage);
-            EventManager.TriggerEvent("UpdatePower", isAttacker ? damage : -damage);
+            enemyController.DealDamage(damage);
         }
 
         private void ResetRandomNumber() {

@@ -11,7 +11,7 @@ namespace _Scripts
 {
     public class GameManager : MonoBehaviour
     {
-        private const float MAX_INCREASE = 16f;
+        private const float MAX_INCREASE = 8f;
         private const float MIN_DECREASE = 0.5f;
         [SerializeField] private GameObject preGameUI;
         [SerializeField] private Button startBtn;
@@ -74,7 +74,6 @@ namespace _Scripts
             _started = true;
             if (!_isAttackerGenesLoaded || !_isDefenderGenesLoaded) return;
             _started = false;
-            backgroundMusic.Play();
             EventManager.StartListening("EndGame", EndGame);
             var attackerCount = attackerCountInput.text;
             var defenderCount = defenderCountInput.text;
@@ -85,6 +84,7 @@ namespace _Scripts
             inGameUI.SetActive(true);
             _isPlaying = true;
             SetTimeScale(1f);
+            backgroundMusic.Play();
         }
 
         private void OnPauseOrResume() {

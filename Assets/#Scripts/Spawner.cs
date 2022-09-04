@@ -98,5 +98,13 @@ namespace _Scripts {
 
             _tempAxieCount += Random.Range(axieCount, _cellPositionList.Count);
         }
+
+        public int GetCurrentTeamHitPoint(List<GameObject> team) {
+            int totalHp = 0;
+            foreach (var axie in team) {
+                totalHp += axie.GetComponent<AxieController>().CurrentHitPoint;
+            }
+            return totalHp;
+        }
     }
 }
