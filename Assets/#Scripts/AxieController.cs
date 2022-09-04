@@ -6,13 +6,15 @@ using Random = UnityEngine.Random;
 namespace _Scripts {
     public class AxieController : MonoBehaviour {
         private const float COUNT_DOWN = 1f;
+        private const int MAX_ATTACKER_HP = 16;
+        private const int MAX_DEFENDER_HP = 32;
+
         [SerializeField] private AxieStateManager axieStateManager;
         public bool isAttacker;
         public int maxHitPoint;
         public Tilemap map;
         public Vector3 positionOffset;
         public int damage;
-
         private StatsPanel _axieStatsPanel;
         private Camera _camera;
         private GameObject _currentEnemy;
@@ -51,12 +53,13 @@ namespace _Scripts {
             _camera = Camera.main;
             _spawner = Spawner.Instance;
             _instanceId = gameObject.GetInstanceID();
+            maxHitPoint = isAttacker ? MAX_ATTACKER_HP : MAX_DEFENDER_HP;
+            _currentHitPoint = maxHitPoint;
             SetupStatsPanel();
         }
 
         // Start is called before the first frame update
         private void Start() {
-            _currentHitPoint = maxHitPoint;
             _enemyList = isAttacker ? _spawner.defenders : _spawner.attackers;
         }
 
