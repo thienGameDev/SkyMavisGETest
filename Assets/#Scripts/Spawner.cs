@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 
 namespace _Scripts {
     public class Spawner : StaticInstance<Spawner> {
-        private const int MAX_AXIE_COUNT = 100;
+        private const int MAX_AXIE_COUNT = 20;
         [SerializeField] private Tilemap map;
         [SerializeField] private Transform defenderParent;
         [SerializeField] private Transform attackerParent;
@@ -33,8 +33,9 @@ namespace _Scripts {
             if (attackers.Count == 0 || defenders.Count == 0) {
                 SwitchStateForTeam(attackers);
                 SwitchStateForTeam(defenders);
-                EventManager.TriggerEvent("EndGame", 0);
                 _battleEnded = true;
+                isReady = false;
+                EventManager.TriggerEvent("EndGame", 0);
             }
         }
 
@@ -59,7 +60,6 @@ namespace _Scripts {
 
         public void SpawnAxies(int attackerCount, int defenderCount) {
             _tempAxieCount = 0;
-            isReady = false;
             ShuffleCells();
             if (attackerCount > MAX_AXIE_COUNT) attackerCount = MAX_AXIE_COUNT;
             if (defenderCount > MAX_AXIE_COUNT) defenderCount = MAX_AXIE_COUNT;

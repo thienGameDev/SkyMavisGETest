@@ -17,9 +17,6 @@ namespace _Scripts {
             var axieController = parent.GetComponent<AxieController>();
             _maxHitPoint = axieController.maxHitPoint;
             _currentHitPoint =_maxHitPoint;
-            var parentId = parent.GetInstanceID();
-            _eventUpdateHealthBar = "UpdateHealthBar" + parentId;
-            EventManager.StartListening(_eventUpdateHealthBar, UpdateHealthBar);
         }
 
         // Update is called once per frame
@@ -44,7 +41,7 @@ namespace _Scripts {
             
         }
 
-        private void UpdateHealthBar(int currentHealth) {
+        public void UpdateHealthBar(int currentHealth) {
             _currentHitPoint = currentHealth;
             var localScale = outerHealthBar.transform.localScale;
             localScale.x = GetScaleXAmount();

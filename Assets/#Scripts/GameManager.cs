@@ -35,6 +35,7 @@ namespace _Scripts
             Mixer.Init();
             PlayerPrefs.SetString("attackerId", attackerAxieId);
             PlayerPrefs.SetString("defenderId", defenderAxieId);
+            _currentTimeScale = 1f;
         }
 
         // Start is called before the first frame update
@@ -83,7 +84,6 @@ namespace _Scripts
             preGameUI.gameObject.SetActive(false);
             inGameUI.SetActive(true);
             _isPlaying = true;
-            SetTimeScale(1f);
             backgroundMusic.Play();
         }
 

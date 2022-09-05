@@ -10,6 +10,7 @@ namespace _Scripts {
         private const int MAX_DEFENDER_HP = 32;
 
         [SerializeField] private AxieStateManager axieStateManager;
+        [SerializeField]private HealthBarController healthBarController;
         public bool isAttacker;
         public int maxHitPoint;
         public Tilemap map;
@@ -25,7 +26,6 @@ namespace _Scripts {
         private List<GameObject> _ignoreEnemyList = new List<GameObject>();
         private int _instanceId;
         private bool _isFindingTarget;
-
         private Queue<Vector3Int> _pathToEnemy = new Queue<Vector3Int>();
 
         private int _randomNumber = -1;
@@ -86,10 +86,9 @@ namespace _Scripts {
             _axieStatsPanel = canvas.transform.Find("AxieStats").gameObject.GetComponent<StatsPanel>();
         }
 
-        public void DealDamage(int dmg) {
+        private void DealDamage(int dmg) {
             _currentHitPoint -= dmg;
-            var eventUpdateHealthBar = $"UpdateHealthBar{_instanceId}";
-            EventManager.TriggerEvent(eventUpdateHealthBar, CurrentHitPoint);
+            healthBarController.UpdateHealthBar(CurrentHitPoint);
             if (_currentHitPoint <= 0) {
                 Dead();
             }
